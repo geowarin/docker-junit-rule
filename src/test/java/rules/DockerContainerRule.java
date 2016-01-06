@@ -1,7 +1,5 @@
 package rules;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.spotify.docker.client.*;
 import com.spotify.docker.client.messages.*;
 import org.junit.rules.ExternalResource;
@@ -10,28 +8,36 @@ import org.junit.runners.model.Statement;
 
 import java.net.URI;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
- * User: moshe
- * Date: 9/23/14
- * Time: 11:57 AM
+ * Adapted from https://gist.github.com/mosheeshel/c427b43c36b256731a0b
  */
 public class DockerContainerRule extends ExternalResource {
-
     public static final String DOCKER_SERVICE_URL = "http://192.168.99.100:2375";
+
     private final DockerClient dockerClient;
-    private final HostConfig hostConfig;
     private ContainerCreation container;
+    private Map<String, List<PortBinding>> ports;
 
+    public DockerContainerRule(String imageName) {
+        this(imageName, new String[0], null);
+    }
 
-    public DockerContainerRule(String imageName, int servicePort) {
+    public DockerContainerRule(String imageName, String[] ports) {
+        this(imageName, ports, null);
+    }
+
+    public DockerContainerRule(String imageName, String[] ports, String cmd) {
 
 //        dockerClient = new DefaultDockerClient(dockerServiceUrl);
-        DockerCertificates dockerCertificates = null;
+        DockerCertificates dockerCertificates;
         try {
-            dockerCertificates = new DockerCertificates(Paths.get("/Users/geowarin/.docker/machine/certs"));
+            String userHome = System.getProperty("user.home");
+            dockerCertificates = new DockerCertificates(Paths.get(userHome, ".docker/machine/certs"));
         } catch (DockerCertificateException e) {
             throw new IllegalStateException(e);
         }
@@ -40,28 +46,27 @@ public class DockerContainerRule extends ExternalResource {
                 .dockerCertificates(dockerCertificates)
                 .build();
 
-        final String[] ports = {"5672", "61613", "15672"};
-//        PortBinding portBinding = PortBinding.randomPort("0.0.0.0");
-
-
-        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+        Map<String, List<PortBinding>> portBindings = new HashMap<>();
         for (String port : ports) {
-            List<PortBinding> hostPorts = new ArrayList<>();
-            hostPorts.add(PortBinding.of("0.0.0.0", port));
+            List<PortBinding> hostPorts = Collections.singletonList(PortBinding.randomPort("0.0.0.0"));
             portBindings.put(port, hostPorts);
         }
 
-        hostConfig = HostConfig.builder()
+        HostConfig hostConfig = HostConfig.builder()
                 .portBindings(portBindings)
                 .build();
 
-        ContainerConfig containerConfig = ContainerConfig.builder()
+        ContainerConfig.Builder configBuilder = ContainerConfig.builder()
                 .hostConfig(hostConfig)
                 .image(imageName)
                 .networkDisabled(false)
-//                .cmd(cmd)
-                .exposedPorts(ports)
-                .build();
+                .exposedPorts(ports);
+
+        if (cmd != null) {
+            configBuilder = configBuilder.cmd(cmd);
+        }
+        ContainerConfig containerConfig = configBuilder.build();
+
 
         try {
             dockerClient.pull(imageName);
@@ -70,14 +75,6 @@ public class DockerContainerRule extends ExternalResource {
             e.printStackTrace();
         }
     }
-
-    private boolean isSet(String value) {
-        return value != null && !value.equals("");
-    }
-
-//    public Map<String, String> getExternalServicePorts() {
-//        return externalServicePorts;
-//    }
 
     @Override
     public Statement apply(Statement base, Description description) {
@@ -88,8 +85,20 @@ public class DockerContainerRule extends ExternalResource {
     protected void before() throws Throwable {
         super.before();
         dockerClient.startContainer(container.id());
-        final ContainerInfo info = dockerClient.inspectContainer(container.id());
-        System.out.println(info);
+        ContainerInfo info = dockerClient.inspectContainer(container.id());
+        ports = info.networkSettings().ports();
+    }
+
+    public int getHostPort(String containerPort) {
+        List<PortBinding> portBindings = ports.get(containerPort);
+        if (portBindings.isEmpty()) {
+            return -1;
+        }
+        return Integer.parseInt(portBindings.get(0).hostPort());
+    }
+
+    public String getDockerHost() {
+        return dockerClient.getHost();
     }
 
     @Override

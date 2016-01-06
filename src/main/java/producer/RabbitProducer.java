@@ -8,13 +8,12 @@ import com.rabbitmq.client.MessageProperties;
 import java.io.IOException;
 
 public class RabbitProducer {
-
     private Channel channel;
 
-    public RabbitProducer(int port) throws IOException {
+    public RabbitProducer(String host, int port) throws IOException {
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("192.168.99.100");
-//        factory.setPort(port);
+        factory.setHost(host);
+        factory.setPort(port);
         Connection connection = factory.newConnection();
         channel = connection.createChannel();
         this.channel.queueDeclare("greetings", false, false, true, null);
