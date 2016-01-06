@@ -17,5 +17,4 @@ public class RabbitIntegrationTest {
         factory.setPort(rabbitContainerRule.getRabbitServicePort());
         factory.newConnection();
     }
-
 }
