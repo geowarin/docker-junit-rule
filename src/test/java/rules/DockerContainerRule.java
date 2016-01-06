@@ -8,7 +8,11 @@ import org.junit.rules.ExternalResource;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
+import java.nio.channels.SocketChannel;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,34 +40,71 @@ public class DockerContainerRule extends ExternalResource {
 
     public DockerContainerRule(String imageName, String[] ports, String cmd) {
         dockerClient = createDockerClient();
-
-        Map<String, List<PortBinding>> portBindings = new HashMap<>();
-        for (String port : ports) {
-            List<PortBinding> hostPorts = Collections.singletonList(PortBinding.randomPort("0.0.0.0"));
-            portBindings.put(port, hostPorts);
-        }
-
-        HostConfig hostConfig = HostConfig.builder()
-                .portBindings(portBindings)
-                .build();
-
-        ContainerConfig.Builder configBuilder = ContainerConfig.builder()
-                .hostConfig(hostConfig)
-                .image(imageName)
-                .networkDisabled(false)
-                .exposedPorts(ports);
-
-        if (cmd != null) {
-            configBuilder = configBuilder.cmd(cmd);
-        }
-        ContainerConfig containerConfig = configBuilder.build();
-
+        ContainerConfig containerConfig = createContainerConfig(imageName, ports, cmd);
 
         try {
             dockerClient.pull(imageName);
             container = dockerClient.createContainer(containerConfig);
         } catch (DockerException | InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Override
+    protected void before() throws Throwable {
+        super.before();
+        dockerClient.startContainer(container.id());
+        ContainerInfo info = dockerClient.inspectContainer(container.id());
+        ports = info.networkSettings().ports();
+    }
+
+    @Override
+    protected void after() {
+        super.after();
+        try {
+            dockerClient.killContainer(container.id());
+            dockerClient.removeContainer(container.id(), true);
+        } catch (DockerException | InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Utility method to get the docker host.
+     * Can be different from localhost if using docker-machine
+     */
+    public String getDockerHost() {
+        return dockerClient.getHost();
+    }
+
+    /**
+     * Utility method to ensure a container is started
+     */
+    public void waitForPort(int port) {
+        waitForPort(port, 10000);
+    }
+
+    /**
+     * Utility method to ensure a container is started
+     */
+    public void waitForPort(int port, long timeoutInMillis) {
+        SocketAddress address = new InetSocketAddress(getDockerHost(), port);
+        long totalWait = 0;
+        while (true) {
+            try {
+                SocketChannel.open(address);
+                return;
+            } catch (IOException e) {
+                try {
+                    Thread.sleep(100);
+                    totalWait += 100;
+                    if (totalWait > timeoutInMillis) {
+                        throw new IllegalStateException("Timeout while waiting for port " + port);
+                    }
+                } catch (InterruptedException ie) {
+                    throw new IllegalStateException(ie);
+                }
+            }
         }
     }
 
@@ -90,17 +131,27 @@ public class DockerContainerRule extends ExternalResource {
                 .build();
     }
 
-    @Override
-    public Statement apply(Statement base, Description description) {
-        return super.apply(base, description);
-    }
+    private ContainerConfig createContainerConfig(String imageName, String[] ports, String cmd) {
+        Map<String, List<PortBinding>> portBindings = new HashMap<>();
+        for (String port : ports) {
+            List<PortBinding> hostPorts = Collections.singletonList(PortBinding.randomPort("0.0.0.0"));
+            portBindings.put(port, hostPorts);
+        }
 
-    @Override
-    protected void before() throws Throwable {
-        super.before();
-        dockerClient.startContainer(container.id());
-        ContainerInfo info = dockerClient.inspectContainer(container.id());
-        ports = info.networkSettings().ports();
+        HostConfig hostConfig = HostConfig.builder()
+                .portBindings(portBindings)
+                .build();
+
+        ContainerConfig.Builder configBuilder = ContainerConfig.builder()
+                .hostConfig(hostConfig)
+                .image(imageName)
+                .networkDisabled(false)
+                .exposedPorts(ports);
+
+        if (cmd != null) {
+            configBuilder = configBuilder.cmd(cmd);
+        }
+        return configBuilder.build();
     }
 
     public int getHostPort(String containerPort) {
@@ -114,20 +165,5 @@ public class DockerContainerRule extends ExternalResource {
     private static boolean isUnix() {
         String os = System.getProperty("os.name").toLowerCase();
         return os.contains("nix") || os.contains("nux") || os.contains("aix");
-    }
-
-    public String getDockerHost() {
-        return dockerClient.getHost();
-    }
-
-    @Override
-    protected void after() {
-        super.after();
-        try {
-            dockerClient.killContainer(container.id());
-            dockerClient.removeContainer(container.id(), true);
-        } catch (DockerException | InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 }

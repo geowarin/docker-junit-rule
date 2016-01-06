@@ -1,5 +1,11 @@
 package rules;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.nio.channels.SocketChannel;
+
 public class RabbitContainerRule extends DockerContainerRule {
     public static final String RABBIT_CONTAINER_IMAGE_NAME = "rabbitmq:management";
 
@@ -11,7 +17,7 @@ public class RabbitContainerRule extends DockerContainerRule {
     protected void before() throws Throwable {
         super.before();
         // wait for container to boot
-        Thread.sleep(2000);
+        waitForPort(getRabbitServicePort());
     }
 
     public int getRabbitServicePort() {
