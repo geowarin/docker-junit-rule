@@ -11,6 +11,8 @@ public class RabbitContainerRule extends DockerContainerRule {
     public static final String RABBIT_CONTAINER_IMAGE_NAME = "rabbitmq:management";
 
     public RabbitContainerRule() {
+        // List the ports to open on the container.
+        // They will automatically be bound to random unused ports on your host
         super(RABBIT_CONTAINER_IMAGE_NAME, new String[]{"5672", "61613", "15672"});
     }
 
