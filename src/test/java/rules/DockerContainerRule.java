@@ -5,8 +5,6 @@ import com.spotify.docker.client.messages.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.rules.ExternalResource;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -38,6 +36,11 @@ public class DockerContainerRule extends ExternalResource {
         this(imageName, ports, null);
     }
 
+    /**
+     * @param imageName The name of the docker image to use
+     * @param ports     The ports that will be open on the container. Will automatically assign random ports on the host
+     * @param cmd       override the default container cmd
+     */
     public DockerContainerRule(String imageName, String[] ports, String cmd) {
         dockerClient = createDockerClient();
         ContainerConfig containerConfig = createContainerConfig(imageName, ports, cmd);

@@ -1,8 +1,8 @@
 package integration;
 
+import com.rabbitmq.client.ConnectionFactory;
 import org.junit.ClassRule;
 import org.junit.Test;
-import producer.RabbitProducer;
 import rules.RabbitContainerRule;
 
 public class RabbitIntegrationTest {
@@ -12,8 +12,10 @@ public class RabbitIntegrationTest {
 
     @Test
     public void testConnectsToDocker() throws Exception {
-        RabbitProducer rabbitProducer = new RabbitProducer(rabbitContainerRule.getDockerHost(), rabbitContainerRule.getRabbitServicePort());
-        rabbitProducer.produce();
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost(rabbitContainerRule.getDockerHost());
+        factory.setPort(rabbitContainerRule.getRabbitServicePort());
+        factory.newConnection();
     }
 
 }
