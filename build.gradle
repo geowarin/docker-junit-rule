@@ -8,10 +8,8 @@ allprojects {
   }
   apply plugin: 'maven'
   apply plugin: 'maven-publish'
-  apply plugin: 'groovy'
+  apply plugin: 'java'
 }
-
-apply plugin: 'java'
 
 group = 'com.github.geowarin'
 version = '1.0'
