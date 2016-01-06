@@ -91,7 +91,7 @@ Add the following to your `build.gradle`:
 
 ```groovy
 repositories {
-  mavenCentral()
+  jcenter()
 }
 
 dependencies {
