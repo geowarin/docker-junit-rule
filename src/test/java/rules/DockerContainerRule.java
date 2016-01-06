@@ -18,7 +18,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * JUnit rule starting a docker container before the test and killing it
+ * afterwards.
+ *
+ * Uses spotify/docker-client.
+ *
  * Adapted from https://gist.github.com/mosheeshel/c427b43c36b256731a0b
+ *
+ * author: Geoffroy Warin (geowarin.github.io)
  */
 public class DockerContainerRule extends ExternalResource {
     protected final Log logger = LogFactory.getLog(getClass());
@@ -120,7 +127,7 @@ public class DockerContainerRule extends ExternalResource {
             }
         }
 
-        logger.info("Could not create docker client from the environment. Assuming docker-machine environment");
+        logger.info("Could not create docker client from the environment. Assuming docker-machine environment with url " + DOCKER_MACHINE_SERVICE_URL);
         DockerCertificates dockerCertificates = null;
         try {
             String userHome = System.getProperty("user.home");
