@@ -20,11 +20,12 @@ import java.util.Map;
 /**
  * JUnit rule starting a docker container before the test and killing it
  * afterwards.
- * <p/>
+ *
+ * <p>
  * Uses spotify/docker-client.
- * <p/>
  * Adapted from https://gist.github.com/mosheeshel/c427b43c36b256731a0b
- * <p/>
+ * </p>
+ *
  * author: Geoffroy Warin (geowarin.github.io)
  */
 public class DockerContainerRule extends ExternalResource {
