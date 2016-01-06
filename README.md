@@ -56,6 +56,49 @@ public class RabbitIntegrationTest {
 }
 ```
 
+## Installation
+
+The library is available on jcenter
+
+### Maven
+
+Add the following to your `pom.xml`:
+
+```xml
+<repositories>
+    <repository>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+        <id>central</id>
+        <name>bintray</name>
+        <url>http://jcenter.bintray.com</url>
+    </repository>
+</repositories>
+
+...
+
+<dependency>
+    <groupId>com.github.geowarin</groupId>
+    <artifactId>docker-junit-rule</artifactId>
+    <version>1.0.2</version>
+</dependency>
+```
+
+### Gradle
+
+Add the following to your `build.gradle`:
+
+```groovy
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile 'com.github.geowarin:docker-junit-rule:1.0.2'
+}
+```
+
 ## Principle
 
 Uses https://github.com/spotify/docker-client to connect to the docker daemon API.
