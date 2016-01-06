@@ -1,4 +1,4 @@
-package rules;
+package com.github.geowarin.junit;
 
 import com.spotify.docker.client.*;
 import com.spotify.docker.client.messages.*;

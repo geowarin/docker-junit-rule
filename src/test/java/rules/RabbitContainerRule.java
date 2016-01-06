@@ -1,5 +1,7 @@
 package rules;
 
+import com.github.geowarin.junit.DockerContainerRule;
+
 public class RabbitContainerRule extends DockerContainerRule {
     public static final String RABBIT_CONTAINER_IMAGE_NAME = "rabbitmq:management";
 
