@@ -25,7 +25,7 @@ repositories {
 
 dependencies {
   compile 'org.slf4j:slf4j-api:1.7.12'
-  compile 'com.spotify:docker-client:3.4.0'
+  compile 'com.spotify:docker-client:3.4.0:shaded'
   compile('junit:junit:4.12') { ext.optional = true }
   testCompile 'org.slf4j:slf4j-simple:1.7.12'
   testCompile 'com.rabbitmq:amqp-client:3.2.1'
