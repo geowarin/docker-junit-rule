@@ -70,8 +70,8 @@ publishing {
 }
 
 bintray {
-  user = bintrayUser
-  key = bintrayKey
+  user = bintrayUser || ''
+  key = bintrayKey || ''
   publications = ['JarPublication']
   pkg {
     repo = 'maven'
