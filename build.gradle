@@ -32,13 +32,6 @@ dependencies {
   testCompile 'com.rabbitmq:amqp-client:3.2.1'
 }
 
-test {
-  testLogging {
-    events "failed"
-    exceptionFormat "short"
-  }
-}
-
 task sourcesJar(type: Jar, dependsOn: classes) {
   classifier = 'sources'
   from sourceSets.main.allSource
