@@ -53,7 +53,7 @@ Add the following to your `pom.xml`:
 <dependency>
     <groupId>com.github.geowarin</groupId>
     <artifactId>docker-junit-rule</artifactId>
-    <version>1.0.2</version>
+    <version>1.1.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -68,7 +68,7 @@ repositories {
 }
 
 dependencies {
-  testCompile 'com.github.geowarin:docker-junit-rule:1.0.2'
+  testCompile 'com.github.geowarin:docker-junit-rule:1.1.0'
 }
 ```
 
