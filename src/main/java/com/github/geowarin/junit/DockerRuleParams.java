@@ -7,8 +7,7 @@ public class DockerRuleParams {
   String[] ports;
   String cmd;
 
-
   String portToWaitOn;
+  public int waitTimeout;
   String logToWait;
-
 }

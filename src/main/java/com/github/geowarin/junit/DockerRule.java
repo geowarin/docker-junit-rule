@@ -13,25 +13,23 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.spotify.docker.client.DockerClient.LogsParam.follow;
-import static com.spotify.docker.client.DockerClient.LogsParam.stdout;
+import static com.spotify.docker.client.DockerClient.LogsParam.*;
 
 /**
+ * <p>
  * JUnit rule starting a docker container before the test and killing it
  * afterwards.
- * <p>
+ * </p>
  * <p>
  * Uses spotify/docker-client.
  * Adapted from https://gist.github.com/mosheeshel/c427b43c36b256731a0b
  * </p>
- * <p>
  * author: Geoffroy Warin (geowarin.github.io)
  */
 public class DockerRule extends ExternalResource {
@@ -68,7 +66,7 @@ public class DockerRule extends ExternalResource {
     ports = info.networkSettings().ports();
 
     if (params.portToWaitOn != null) {
-      waitForPort(getHostPort(params.portToWaitOn));
+      waitForPort(getHostPort(params.portToWaitOn), params.waitTimeout);
     }
 
     if (params.logToWait != null) {
@@ -98,21 +96,6 @@ public class DockerRule extends ExternalResource {
     return dockerClient.getHost();
   }
 
-  /**
-   * Utility method to ensure a container is started
-   *
-   * @param port The port to wait on
-   */
-  public void waitForPort(int port) {
-    waitForPort(port, 10000);
-  }
-
-  /**
-   * Utility method to ensure a container is started
-   *
-   * @param port            The port to wait on
-   * @param timeoutInMillis Maximum waiting time in milliseconds
-   */
   public void waitForPort(int port, long timeoutInMillis) {
     SocketAddress address = new InetSocketAddress(getDockerHost(), port);
     long totalWait = 0;

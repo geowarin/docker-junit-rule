@@ -2,15 +2,22 @@
 
 A junit rule to run docker containers
 
+[![Build Status](https://travis-ci.org/geowarin/docker-junit-rule.svg)](https://travis-ci.org/geowarin/docker-junit-rule)
+
 ## Usage
 
 Example for rabbitMQ:
 
 ```java
+import com.github.geowarin.junit.DockerRule;
+import com.rabbitmq.client.ConnectionFactory;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 public class RabbitIntegrationTest {
 
   @ClassRule
-  public static DockerRule rabbitContainerRule =
+  public static DockerRule rabbitRule =
     DockerRule.builder()
       .image("rabbitmq:management")
       .ports("5672")
@@ -21,8 +28,8 @@ public class RabbitIntegrationTest {
   @Test
   public void testConnectsToDocker() throws Exception {
     ConnectionFactory factory = new ConnectionFactory();
-    factory.setHost(rabbitContainerRule.getDockerHost());
-    factory.setPort(rabbitContainerRule.getHostPort("5672/tcp"));
+    factory.setHost(rabbitRule.getDockerHost());
+    factory.setPort(rabbitRule.getHostPort("5672/tcp"));
     factory.newConnection();
   }
 }

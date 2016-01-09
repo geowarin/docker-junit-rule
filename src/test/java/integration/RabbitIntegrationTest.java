@@ -8,7 +8,7 @@ import org.junit.Test;
 public class RabbitIntegrationTest {
 
   @ClassRule
-  public static DockerRule rabbitContainerRule =
+  public static DockerRule rabbitRule =
     DockerRule.builder()
       .image("rabbitmq:management")
       .ports("5672")
@@ -19,8 +19,8 @@ public class RabbitIntegrationTest {
   @Test
   public void testConnectsToDocker() throws Exception {
     ConnectionFactory factory = new ConnectionFactory();
-    factory.setHost(rabbitContainerRule.getDockerHost());
-    factory.setPort(rabbitContainerRule.getHostPort("5672/tcp"));
+    factory.setHost(rabbitRule.getDockerHost());
+    factory.setPort(rabbitRule.getHostPort("5672/tcp"));
     factory.newConnection();
   }
 }
