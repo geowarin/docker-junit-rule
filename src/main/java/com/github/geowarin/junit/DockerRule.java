@@ -7,15 +7,21 @@ import org.apache.commons.logging.LogFactory;
 import org.junit.rules.ExternalResource;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.spotify.docker.client.DockerClient.LogsParam.follow;
+import static com.spotify.docker.client.DockerClient.LogsParam.stdout;
 
 /**
  * JUnit rule starting a docker container before the test and killing it
@@ -63,6 +69,10 @@ public class DockerRule extends ExternalResource {
 
     if (params.portToWaitOn != null) {
       waitForPort(getHostPort(params.portToWaitOn));
+    }
+
+    if (params.logToWait != null) {
+      waitForLog(params.logToWait);
     }
   }
 
@@ -183,13 +193,15 @@ public class DockerRule extends ExternalResource {
     return os.contains("nix") || os.contains("nux") || os.contains("aix");
   }
 
-  protected void waitForLog(String messageToMatch) throws DockerException, InterruptedException {
-    LogStream logs = dockerClient.logs(container.id(), DockerClient.LogsParam.follow());
-    String log = "";
+  protected void waitForLog(String messageToMatch) throws DockerException, InterruptedException, UnsupportedEncodingException {
+    LogStream logs = dockerClient.logs(container.id(), follow(), stdout());
+    String log;
     do {
       LogMessage logMessage = logs.next();
-      log = logMessage.content().asCharBuffer().toString();
-      System.out.println(log);
+      ByteBuffer buffer = logMessage.content();
+      byte[] bytes = new byte[buffer.remaining()];
+      buffer.get(bytes);
+      log = new String(bytes);
     } while (!log.contains(messageToMatch));
   }
 }
