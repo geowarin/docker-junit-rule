@@ -4,55 +4,27 @@ A junit rule to run docker containers
 
 ## Usage
 
-Extend the `DockerContainerRule`. Example for rabbitMQ:
+Example for rabbitMQ:
 
 ```java
-public class RabbitContainerRule extends DockerContainerRule {
-    public static final String RABBIT_CONTAINER_IMAGE_NAME = "rabbitmq:management";
-
-    public RabbitContainerRule() {
-        // List the ports to open on the container.
-        // They will automatically be bound to random unused ports on your host
-        super(RABBIT_CONTAINER_IMAGE_NAME, new String[]{"5672", "61613", "15672"});
-    }
-
-    @Override
-    protected void before() throws Throwable {
-        super.before();
-        // wait for container to boot
-        waitForPort(getRabbitServicePort());
-    }
-
-    public int getRabbitServicePort() {
-        return getHostPort("5672/tcp");
-    }
-
-    public int getRabbitManagementPort() {
-        return getHostPort("15672/tcp");
-    }
-}
-```
-
-Use it in your tests:
-
-```java
-import com.rabbitmq.client.ConnectionFactory;
-import org.junit.ClassRule;
-import org.junit.Test;
-import rules.RabbitContainerRule;
-
 public class RabbitIntegrationTest {
 
-    @ClassRule
-    public static RabbitContainerRule rabbitContainerRule = new RabbitContainerRule();
+  @ClassRule
+  public static DockerRule rabbitContainerRule =
+    DockerRule.builder()
+      .image("rabbitmq:management")
+      .ports("5672")
+//      .waitForPort("5672/tcp")
+      .waitForLog("Server startup complete")
+      .build();
 
-    @Test
-    public void testConnectsToDocker() throws Exception {
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(rabbitContainerRule.getDockerHost());
-        factory.setPort(rabbitContainerRule.getRabbitServicePort());
-        factory.newConnection();
-    }
+  @Test
+  public void testConnectsToDocker() throws Exception {
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setHost(rabbitContainerRule.getDockerHost());
+    factory.setPort(rabbitContainerRule.getHostPort("5672/tcp"));
+    factory.newConnection();
+  }
 }
 ```
 
