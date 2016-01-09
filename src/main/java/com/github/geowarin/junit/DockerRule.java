@@ -20,41 +20,34 @@ import java.util.Map;
 /**
  * JUnit rule starting a docker container before the test and killing it
  * afterwards.
- *
+ * <p>
  * <p>
  * Uses spotify/docker-client.
  * Adapted from https://gist.github.com/mosheeshel/c427b43c36b256731a0b
  * </p>
- *
+ * <p>
  * author: Geoffroy Warin (geowarin.github.io)
  */
-public class DockerContainerRule extends ExternalResource {
+public class DockerRule extends ExternalResource {
   protected final Log logger = LogFactory.getLog(getClass());
   public static final String DOCKER_MACHINE_SERVICE_URL = "https://192.168.99.100:2376";
 
   private final DockerClient dockerClient;
   private ContainerCreation container;
   private Map<String, List<PortBinding>> ports;
+  private DockerRuleParams params;
 
-  public DockerContainerRule(String imageName) {
-    this(imageName, new String[0], null);
+  public static DockerRuleBuilder builder() {
+    return new DockerRuleBuilder();
   }
 
-  public DockerContainerRule(String imageName, String[] ports) {
-    this(imageName, ports, null);
-  }
-
-  /**
-   * @param imageName The name of the docker image to use
-   * @param ports     The ports that will be open on the container. Will automatically assign random ports on the host
-   * @param cmd       override the default container cmd
-   */
-  public DockerContainerRule(String imageName, String[] ports, String cmd) {
+  DockerRule(DockerRuleParams params) {
+    this.params = params;
     dockerClient = createDockerClient();
-    ContainerConfig containerConfig = createContainerConfig(imageName, ports, cmd);
+    ContainerConfig containerConfig = createContainerConfig(params.imageName, params.ports, params.cmd);
 
     try {
-      dockerClient.pull(imageName);
+      dockerClient.pull(params.imageName);
       container = dockerClient.createContainer(containerConfig);
     } catch (DockerException | InterruptedException e) {
       throw new IllegalStateException(e);
@@ -67,6 +60,10 @@ public class DockerContainerRule extends ExternalResource {
     dockerClient.startContainer(container.id());
     ContainerInfo info = dockerClient.inspectContainer(container.id());
     ports = info.networkSettings().ports();
+
+    if (params.portToWaitOn != null) {
+      waitForPort(getHostPort(params.portToWaitOn));
+    }
   }
 
   @Override
@@ -102,7 +99,8 @@ public class DockerContainerRule extends ExternalResource {
 
   /**
    * Utility method to ensure a container is started
-   * @param port The port to wait on
+   *
+   * @param port            The port to wait on
    * @param timeoutInMillis Maximum waiting time in milliseconds
    */
   public void waitForPort(int port, long timeoutInMillis) {
@@ -183,5 +181,15 @@ public class DockerContainerRule extends ExternalResource {
   private static boolean isUnix() {
     String os = System.getProperty("os.name").toLowerCase();
     return os.contains("nix") || os.contains("nux") || os.contains("aix");
+  }
+
+  protected void waitForLog(String messageToMatch) throws DockerException, InterruptedException {
+    LogStream logs = dockerClient.logs(container.id(), DockerClient.LogsParam.follow());
+    String log = "";
+    do {
+      LogMessage logMessage = logs.next();
+      log = logMessage.content().asCharBuffer().toString();
+      System.out.println(log);
+    } while (!log.contains(messageToMatch));
   }
 }
