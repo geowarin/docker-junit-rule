@@ -10,4 +10,6 @@ public class DockerRuleParams {
   String portToWaitOn;
   public int waitTimeout;
   String logToWait;
+
+  boolean isLocalImage;
 }

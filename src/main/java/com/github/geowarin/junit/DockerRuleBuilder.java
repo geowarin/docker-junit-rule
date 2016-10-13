@@ -41,6 +41,15 @@ public class DockerRuleBuilder {
     return this;
   }
 
+ /**
+  * @param isLocalImage If the image has been built locally
+  * @return The builder
+  */
+  public DockerRuleBuilder isLocalImage(boolean isLocalImage) {
+    params.isLocalImage = isLocalImage;
+    return this;
+  }
+
   /**
    * Utility method to ensure a container is started
    *

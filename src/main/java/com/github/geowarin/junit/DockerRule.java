@@ -51,7 +51,9 @@ public class DockerRule extends ExternalResource {
     ContainerConfig containerConfig = createContainerConfig(params.imageName, params.ports, params.cmd);
 
     try {
-      dockerClient.pull(params.imageName);
+      if (!params.isLocalImage) {
+        dockerClient.pull(params.imageName);
+      }
       container = dockerClient.createContainer(containerConfig);
     } catch (DockerException | InterruptedException e) {
       throw new IllegalStateException(e);
