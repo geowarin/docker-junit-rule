@@ -87,3 +87,7 @@ You should probably set the `DOCKER_HOST` and `DOCKER_CERT_PATH` on your machine
 If they are not set and your are not on UNIX, the client will try to connect to `https://192.168.99.100:2376`,
 which is the adress of my default docker machine.
 It works great for me but your mileage may vary.
+
+## Licence
+
+MIT
