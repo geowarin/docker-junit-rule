@@ -52,6 +52,17 @@ public class DockerRuleBuilder {
   }
 
   /**
+   * Utility method to wait before proceed with further checks
+   *
+   * @param waitBeforeProceed waiting time in milliseconds
+   * @return The builder
+   */
+  public DockerRuleBuilder waitBeforeProceed(Integer waitBeforeProceed) {
+    params.waitBeforeProceed  = waitBeforeProceed;
+    return this;
+  }
+
+  /**
    * Utility method to ensure a container is started
    *
    * @param portToWaitOn    The port to wait on

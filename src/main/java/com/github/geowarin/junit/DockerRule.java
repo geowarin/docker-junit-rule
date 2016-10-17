@@ -1,7 +1,19 @@
 package com.github.geowarin.junit;
 
-import com.spotify.docker.client.*;
-import com.spotify.docker.client.messages.*;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerCertificateException;
+import com.spotify.docker.client.DockerCertificates;
+import com.spotify.docker.client.DockerClient;
+import static com.spotify.docker.client.DockerClient.LogsParam.follow;
+import static com.spotify.docker.client.DockerClient.LogsParam.stdout;
+import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.LogMessage;
+import com.spotify.docker.client.LogStream;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.ContainerInfo;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.PortBinding;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.rules.ExternalResource;
@@ -18,8 +30,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.spotify.docker.client.DockerClient.LogsParam.*;
 
 /**
  * <p>
@@ -64,6 +74,10 @@ public class DockerRule extends ExternalResource {
     dockerClient.startContainer(container.id());
     ContainerInfo info = dockerClient.inspectContainer(container.id());
     ports = info.networkSettings().ports();
+
+    if(params.waitBeforeProceed != null) {
+      Thread.sleep(params.waitBeforeProceed);
+    }
 
     if (params.portToWaitOn != null) {
       waitForPort(getHostPort(params.portToWaitOn), params.waitTimeout);
