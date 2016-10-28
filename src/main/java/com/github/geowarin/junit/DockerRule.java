@@ -136,7 +136,7 @@ public class DockerRule extends ExternalResource {
       final DefaultDockerClient.Builder builder = new DefaultDockerClient.Builder();
       final String UNIX_SCHEME = "unix";
       String endpoint = params.dockerHost;
-      final Path dockerCertPath = Paths.get(params.dockerHost);
+      final Path dockerCertPath = Paths.get(params.dockerCertPath);
       Optional<DockerCertificates> certs = Optional.absent();
       try {
         certs = DockerCertificates.builder()
