@@ -1,5 +1,7 @@
 package com.github.geowarin.junit;
 
+import com.spotify.docker.client.messages.ContainerConfig;
+
 public class DockerRuleBuilder {
   private final DockerRuleParams params = new DockerRuleParams();
 
@@ -71,6 +73,21 @@ public class DockerRuleBuilder {
    */
   public DockerRuleBuilder waitForLog(String logToWait) {
     params.logToWait = logToWait;
+    return this;
+  }
+
+  public DockerRuleBuilder config(ContainerConfig config) {
+    params.config = config;
+    return this;
+  }
+
+  public DockerRuleBuilder dockerHost(String dockerHost) {
+    params.dockerHost = dockerHost;
+    return this;
+  }
+
+  public DockerRuleBuilder dockerCertPath(String dockerCertPath) {
+    params.dockerCertPath = dockerCertPath;
     return this;
   }
 
