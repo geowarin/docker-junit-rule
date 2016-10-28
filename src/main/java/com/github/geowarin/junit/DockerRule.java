@@ -157,6 +157,10 @@ public class DockerRule extends ExternalResource {
         final String address = isNullOrEmpty(hostText) ? DEFAULT_HOST : hostText;
 
         builder.uri(scheme + "://" + address + ":" + port);
+
+        if (certs.isPresent()) {
+          builder.dockerCertificates(certs.get());
+        }
       }
       return builder.build();
     }
