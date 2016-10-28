@@ -74,6 +74,16 @@ public class DockerRuleBuilder {
     return this;
   }
 
+  public DockerRuleBuilder dockerHost(String dockerHost) {
+    params.dockerHost = dockerHost;
+    return this;
+  }
+
+  public DockerRuleBuilder dockerCertPath(String dockerCertPath) {
+    params.dockerCertPath = dockerCertPath;
+    return this;
+  }
+
   public DockerRule build() {
     return new DockerRule(params);
   }

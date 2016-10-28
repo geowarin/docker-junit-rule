@@ -1,5 +1,7 @@
 package com.github.geowarin.junit;
 
+import com.google.common.base.Optional;
+import com.google.common.net.HostAndPort;
 import com.spotify.docker.client.*;
 import com.spotify.docker.client.messages.*;
 import org.apache.commons.logging.Log;
@@ -13,13 +15,18 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.spotify.docker.client.DockerClient.LogsParam.*;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.spotify.docker.client.DefaultDockerClient.DEFAULT_HOST;
+import static com.spotify.docker.client.DefaultDockerClient.DEFAULT_PORT;
+import static com.spotify.docker.client.DockerClient.LogsParam.follow;
+import static com.spotify.docker.client.DockerClient.LogsParam.stdout;
 
 /**
  * <p>
@@ -48,7 +55,7 @@ public class DockerRule extends ExternalResource {
   DockerRule(DockerRuleParams params) {
     this.params = params;
     dockerClient = createDockerClient();
-    ContainerConfig containerConfig = createContainerConfig(params.imageName, params.ports, params.cmd);
+    ContainerConfig containerConfig = createContainerConfig(params.imageName, params.ports, params.cmd, params.config);
 
     try {
       dockerClient.pull(params.imageName);
@@ -125,6 +132,34 @@ public class DockerRule extends ExternalResource {
         System.err.println(e.getMessage());
       }
     }
+    if (params.dockerHost != null && params.dockerHost != null) {
+      final DefaultDockerClient.Builder builder = new DefaultDockerClient.Builder();
+      final String UNIX_SCHEME = "unix";
+      String endpoint = params.dockerHost;
+      final Path dockerCertPath = Paths.get(params.dockerHost);
+      Optional<DockerCertificates> certs = Optional.absent();
+      try {
+        certs = DockerCertificates.builder()
+          .dockerCertPath(dockerCertPath).build();
+      } catch (DockerCertificateException e) {
+        System.err.println(e.getMessage());
+      }
+
+      if (endpoint.startsWith(UNIX_SCHEME + "://")) {
+        builder.uri(endpoint);
+      } else {
+        final String stripped = endpoint.replaceAll(".*://", "");
+        final HostAndPort hostAndPort = HostAndPort.fromString(stripped);
+        final String hostText = hostAndPort.getHostText();
+        final String scheme = certs.isPresent() ? "https" : "http";
+
+        final int port = hostAndPort.getPortOrDefault(DEFAULT_PORT);
+        final String address = isNullOrEmpty(hostText) ? DEFAULT_HOST : hostText;
+
+        builder.uri(scheme + "://" + address + ":" + port);
+      }
+      return builder.build();
+    }
 
     logger.info("Could not create docker client from the environment. Assuming docker-machine environment with url " + DOCKER_MACHINE_SERVICE_URL);
     DockerCertificates dockerCertificates = null;
@@ -140,7 +175,7 @@ public class DockerRule extends ExternalResource {
       .build();
   }
 
-  private ContainerConfig createContainerConfig(String imageName, String[] ports, String cmd) {
+  private ContainerConfig createContainerConfig(String imageName, String[] ports, String cmd, ContainerConfig config) {
     Map<String, List<PortBinding>> portBindings = new HashMap<>();
     for (String port : ports) {
       List<PortBinding> hostPorts = Collections.singletonList(PortBinding.randomPort("0.0.0.0"));
@@ -160,6 +195,27 @@ public class DockerRule extends ExternalResource {
     if (cmd != null) {
       configBuilder = configBuilder.cmd(cmd);
     }
+    if (config != null) {
+      configBuilder
+        .hostname(config.hostname())
+        .domainname(config.domainname())
+        .user(config.user())
+        .attachStdin(config.attachStdin())
+        .attachStdout(config.attachStdout())
+        .attachStderr(config.attachStderr())
+        .portSpecs(config.portSpecs())
+        .tty(config.tty())
+        .openStdin(config.openStdin())
+        .stdinOnce(config.stdinOnce())
+        .env(config.env())
+        .volumes(config.volumes())
+        .workingDir(config.workingDir())
+        .entrypoint(config.entrypoint())
+        .onBuild(config.onBuild())
+        .labels(config.labels())
+        .macAddress(config.macAddress());
+    }
+
     return configBuilder.build();
   }
 

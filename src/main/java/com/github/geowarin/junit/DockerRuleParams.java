@@ -1,5 +1,7 @@
 package com.github.geowarin.junit;
 
+import com.spotify.docker.client.messages.ContainerConfig;
+
 public class DockerRuleParams {
 
   String imageName;
@@ -10,4 +12,9 @@ public class DockerRuleParams {
   String portToWaitOn;
   public int waitTimeout;
   String logToWait;
+
+  ContainerConfig config;
+  String dockerHost;
+  String dockerCertPath;
+
 }
