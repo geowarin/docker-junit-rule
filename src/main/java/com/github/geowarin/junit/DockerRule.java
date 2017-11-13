@@ -1,6 +1,11 @@
 package com.github.geowarin.junit;
 
-import com.spotify.docker.client.*;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.LogMessage;
+import com.spotify.docker.client.LogStream;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
+import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -10,16 +15,16 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.spotify.docker.client.DockerClient.LogsParam.*;
+import static com.spotify.docker.client.DockerClient.LogsParam.follow;
+import static com.spotify.docker.client.DockerClient.LogsParam.stdout;
+import static com.spotify.docker.client.DockerClient.RemoveContainerParam.removeVolumes;
 
 /**
  * <p>
@@ -81,7 +86,7 @@ public class DockerRule extends ExternalResource {
     super.after();
     try {
       dockerClient.killContainer(container.id());
-      dockerClient.removeContainer(container.id(), true);
+      dockerClient.removeContainer(container.id(), removeVolumes());
       dockerClient.close();
     } catch (DockerException | InterruptedException e) {
       throw new RuntimeException("Unable to stop/remove docker container " + container.id(), e);
@@ -98,7 +103,7 @@ public class DockerRule extends ExternalResource {
     return dockerClient.getHost();
   }
 
-  public void waitForPort(int port, long timeoutInMillis) {
+  protected void waitForPort(int port, long timeoutInMillis) {
     SocketAddress address = new InetSocketAddress(getDockerHost(), port);
     long totalWait = 0;
     while (true) {
@@ -119,30 +124,15 @@ public class DockerRule extends ExternalResource {
     }
   }
 
-  private DockerClient createDockerClient() {
-    if (isUnix() || System.getenv("DOCKER_HOST") != null) {
-      try {
-        return DefaultDockerClient.fromEnv().build();
-      } catch (DockerCertificateException e) {
-        System.err.println(e.getMessage());
-      }
-    }
-
-    logger.info("Could not create docker client from the environment. Assuming docker-machine environment with url " + DOCKER_MACHINE_SERVICE_URL);
-    DockerCertificates dockerCertificates = null;
+  protected DockerClient createDockerClient() {
     try {
-      String userHome = System.getProperty("user.home");
-      dockerCertificates = new DockerCertificates(Paths.get(userHome, ".docker/machine/certs"));
+      return DefaultDockerClient.fromEnv().build();
     } catch (DockerCertificateException e) {
-      System.err.println(e.getMessage());
+      throw new IllegalStateException("Could not create docker client from environement", e);
     }
-    return DefaultDockerClient.builder()
-      .uri(URI.create(DOCKER_MACHINE_SERVICE_URL))
-      .dockerCertificates(dockerCertificates)
-      .build();
   }
 
-  private ContainerConfig createContainerConfig(String imageName, String[] ports, String cmd) {
+  protected ContainerConfig createContainerConfig(String imageName, String[] ports, String cmd) {
     Map<String, List<PortBinding>> portBindings = new HashMap<>();
     for (String port : ports) {
       List<PortBinding> hostPorts = Collections.singletonList(PortBinding.randomPort("0.0.0.0"));
@@ -171,11 +161,6 @@ public class DockerRule extends ExternalResource {
       return -1;
     }
     return Integer.parseInt(portBindings.get(0).hostPort());
-  }
-
-  private static boolean isUnix() {
-    String os = System.getProperty("os.name").toLowerCase();
-    return os.contains("nix") || os.contains("nux") || os.contains("aix");
   }
 
   protected void waitForLog(String messageToMatch) throws DockerException, InterruptedException, UnsupportedEncodingException {
