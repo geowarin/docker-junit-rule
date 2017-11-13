@@ -83,10 +83,8 @@ dependencies {
 
 Uses https://github.com/spotify/docker-client to connect to the docker daemon API.
 
-You should probably set the `DOCKER_HOST` and `DOCKER_CERT_PATH` on your machine.
-If they are not set and your are not on UNIX, the client will try to connect to `https://192.168.99.100:2376`,
-which is the adress of my default docker machine.
-It works great for me but your mileage may vary.
+Tested with docker-for-mac and travis runs it on linux.
+If it does not work with docker-for-windows, please open a PR ;)
 
 ## Licence
 
