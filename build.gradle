@@ -26,8 +26,8 @@ repositories {
 dependencies {
   compile 'org.slf4j:slf4j-api:1.7.12'
   compile 'com.spotify:docker-client:8.9.1'
-  compile('junit:junit:4.12') { ext.optional = true }
-  compile 'com.google.guava:guava:18.0'
+  compileOnly('junit:junit:4.12')
+  testCompile('junit:junit:4.12')
   testCompile 'org.slf4j:slf4j-simple:1.7.12'
   testCompile 'com.rabbitmq:amqp-client:3.2.1'
 }
@@ -52,19 +52,6 @@ publishing {
       from components.java
       artifact sourcesJar
       artifact javadocJar
-      pom.withXml {
-        def depMap = configurations.compile.dependencies.collectEntries { [it.name, it] }
-        asNode().dependencies.dependency.findAll {
-          def dep = depMap.get(it.artifactId.text())
-          return dep?.hasProperty('optional') && dep.optional
-        }.each {
-          if (it.optional) {
-            it.optional.value = 'true'
-          } else {
-            it.appendNode('optional', 'true')
-          }
-        }
-      }
     }
   }
 }
