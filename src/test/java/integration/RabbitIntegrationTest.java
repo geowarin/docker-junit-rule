@@ -11,7 +11,7 @@ public class RabbitIntegrationTest {
   public static DockerRule rabbitRule =
     DockerRule.builder()
       .image("rabbitmq:management")
-      .ports("5672")
+      .ports("5672:5672")
 //      .waitForPort("5672/tcp")
       .waitForLog("Server startup complete")
       .build();
