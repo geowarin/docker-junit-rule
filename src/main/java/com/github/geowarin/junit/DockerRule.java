@@ -17,10 +17,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.spotify.docker.client.DockerClient.LogsParam.follow;
 import static com.spotify.docker.client.DockerClient.LogsParam.stdout;
@@ -134,9 +131,19 @@ public class DockerRule extends ExternalResource {
 
   protected ContainerConfig createContainerConfig(String imageName, String[] ports, String cmd) {
     Map<String, List<PortBinding>> portBindings = new HashMap<>();
+    List<String> exposedPorts = new ArrayList<>();
+
     for (String port : ports) {
-      List<PortBinding> hostPorts = Collections.singletonList(PortBinding.randomPort("0.0.0.0"));
-      portBindings.put(port, hostPorts);
+      if (port.contains(":")) {
+        String[] splitPorts = port.split(":");
+        List<PortBinding> hostPorts = Collections.singletonList(PortBinding.of("0.0.0.0", splitPorts[1]));
+        portBindings.put(splitPorts[0], hostPorts);
+        exposedPorts.add(splitPorts[0]);
+      } else {
+        List<PortBinding> hostPorts = Collections.singletonList(PortBinding.randomPort("0.0.0.0"));
+        portBindings.put(port, hostPorts);
+        exposedPorts.add(port);
+      }
     }
 
     HostConfig hostConfig = HostConfig.builder()
@@ -147,7 +154,7 @@ public class DockerRule extends ExternalResource {
       .hostConfig(hostConfig)
       .image(imageName)
       .networkDisabled(false)
-      .exposedPorts(ports);
+      .exposedPorts(exposedPorts.toArray(new String[0]));
 
     if (cmd != null) {
       configBuilder = configBuilder.cmd(cmd);
